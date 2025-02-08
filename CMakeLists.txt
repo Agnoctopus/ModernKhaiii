@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.23)
 
 # Conan setup
 include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)

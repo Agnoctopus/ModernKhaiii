@@ -120,4 +120,6 @@ cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release
 cmake --build . -j$nproc
 make large_resource
 make package_python
+cd package_python
+pip3 install .
 ```
