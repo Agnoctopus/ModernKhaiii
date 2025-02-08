@@ -16,6 +16,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <string>
+#include <cassert>
 
 #include "fmt/format.h"
 

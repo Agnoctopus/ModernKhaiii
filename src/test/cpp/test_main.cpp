@@ -16,6 +16,7 @@
 #endif
 #include "gtest/gtest.h"
 #include "spdlog/spdlog.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "khaiii/khaiii_dev.h"
 
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
     auto args = options.parse(argc, argv);
 
     if (args.count("help")) {
-        fmt::fprintf(cerr, "%s\n", options.help());
+        fmt::print(stderr, "{}\n", options.help());
         return 0;
     }
     prog_args = &args;

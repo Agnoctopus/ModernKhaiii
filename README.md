@@ -106,3 +106,18 @@ distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
 WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
+
+### Build
+
+```shell
+mkdir build
+cd build
+
+conan profile detect
+conan install .. --output-folder=. --build=missing 
+
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Unix Makefiles"
+cmake --build . -j$nproc
+make large_resource
+make package_python
+```

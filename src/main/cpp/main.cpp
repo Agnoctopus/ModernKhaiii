@@ -18,6 +18,7 @@
     #include "gperftools/profiler.h"
 #endif
 #include "spdlog/spdlog.h"
+#include <spdlog/sinks/stdout_color_sinks.h>
 
 #include "khaiii/KhaiiiApi.hpp"
 #include "khaiii/khaiii_dev.h"
@@ -94,7 +95,7 @@ int main(int argc, char** argv) {
     auto opts = options.parse(argc, argv);
 
     if (opts.count("help")) {
-        fmt::fprintf(cerr, "%s\n", options.help());
+        fmt::print(stderr, "{}\n", options.help());
         return 0;
     }
     if (opts.count("input")) {

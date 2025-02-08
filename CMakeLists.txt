@@ -1,15 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
-# manage 3rd party libraries with "hunter"
-if(NOT APPLE)
-    set(HUNTER_BUILD_SHARED_LIBS ON)
-endif()
-include("cmake/HunterGate.cmake")
-HunterGate(
-        URL "https://github.com/ruslo/hunter/archive/v0.23.34.tar.gz"
-        SHA1 "70287b1ffa810ee4e952052a9adff9b4856d0d54"
-        LOCAL
-)
+# Conan setup
+include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 
 # versions
 file(READ "include/khaiii/khaiii_api.h" KHAIII_VERSION_HEADER)
@@ -52,19 +44,21 @@ endif()
 set(CMAKE_DEBUG_POSTFIX "_debug")
 
 # dependent 3rd party libraries
-hunter_add_package(Boost)
+
+
+#hunter_add_package(Boost)
 find_package(Boost CONFIG REQUIRED)
-hunter_add_package(cxxopts)
+#hunter_add_package(cxxopts)
 find_package(cxxopts CONFIG REQUIRED)
-hunter_add_package(Eigen)
+#hunter_add_package(Eigen)
 find_package(Eigen3 CONFIG REQUIRED)
-hunter_add_package(fmt)
+#hunter_add_package(fmt)
 find_package(fmt CONFIG REQUIRED)
-hunter_add_package(GTest)
+#hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
-hunter_add_package(nlohmann_json)
+#hunter_add_package(nlohmann_json)
 find_package(nlohmann_json CONFIG REQUIRED)
-hunter_add_package(spdlog)
+#hunter_add_package(spdlog)
 find_package(spdlog CONFIG REQUIRED)
 
 find_package(Threads REQUIRED)
@@ -102,7 +96,8 @@ set(include_directories
         include
         src/main/cpp
         ${Boost_INCLUDE_DIRS}
-        ${EIGEN3_INCLUDE_DIR})
+        ${Eigen3_INCLUDE_DIRS}
+        ${nlohmann_json_INCLUDE_DIRS})
 target_include_directories(obj_khaiii PUBLIC ${include_directories})
 target_compile_definitions(obj_khaiii PUBLIC -DPREFIX="${CMAKE_INSTALL_PREFIX}")
 
@@ -195,3 +190,8 @@ add_custom_target(package_python
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/setup.py.in ${PKG_PY_DIR}/setup.py @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/MANIFEST.in.in ${PKG_PY_DIR}/MANIFEST.in @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/khaiii/__init__.py.in ${PKG_PY_DIR}/khaiii/__init__.py @ONLY)
+
+
+message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
+message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+message(STATUS "nlohmann_json include dir: ${Eigen3_INCLUDE_DIRS}")
