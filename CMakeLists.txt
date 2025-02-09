@@ -179,13 +179,25 @@ include(CPack)
 # Python package
 set(PKG_PY_DIR ${CMAKE_BINARY_DIR}/package_python)
 add_custom_target(package_python
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/README.md ${PKG_PY_DIR}/README.md
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/LICENSE ${PKG_PY_DIR}/LICENSE
+        # Directory creation
+        COMMAND ${CMAKE_COMMAND} -E remove_directory ${PKG_PY_DIR}
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${PKG_PY_DIR}
+
+        # README & LICENSE
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${PKG_PY_DIR}/README.md
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE ${PKG_PY_DIR}/LICENSE
+
+        # Copy python files
         COMMAND ${CMAKE_COMMAND} -E make_directory ${PKG_PY_DIR}/khaiii
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/src/main/python/khaiii/khaiii.py ${PKG_PY_DIR}/khaiii/khaiii.py
-        COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/src/test/python/test_khaiii ${PKG_PY_DIR}/khaiii/test_khaiii
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/src/main/python/khaiii/khaiii.py ${PKG_PY_DIR}/khaiii/khaiii.py
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/test/python/test_khaiii ${PKG_PY_DIR}/khaiii/test_khaiii
+
         COMMAND make package_source
-        COMMAND ${CMAKE_COMMAND} -E rename ${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip ${PKG_PY_DIR}/${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip)
+        COMMAND ${CMAKE_COMMAND} -E rename ${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip ${PKG_PY_DIR}/${CPACK_SOURCE_PACKAGE_FILE_NAME}.zip
+        COMMENT "Assembling Python package"
+        )
+
+
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/setup.py.in ${PKG_PY_DIR}/setup.py @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/MANIFEST.in.in ${PKG_PY_DIR}/MANIFEST.in @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/khaiii/__init__.py.in ${PKG_PY_DIR}/khaiii/__init__.py @ONLY)

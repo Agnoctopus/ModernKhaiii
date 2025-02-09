@@ -16,44 +16,60 @@ __email__ = 'jamie.lim@kakaocorp.com'
 ###########
 # imports #
 ###########
-from distutils.command.build import build
 import os
 import shutil
 import subprocess
 import zipfile
 
 from setuptools import setup
-
+from setuptools.command.build_py import build_py as _build_py
 
 #############
 # constants #
 #############
-_SRC_NAME = '@CPACK_SOURCE_PACKAGE_FILE_NAME@'
+_BUILD_DIR = "@CMAKE_BINARY_DIR@"
+_SRC_NAME = "@CPACK_SOURCE_PACKAGE_FILE_NAME@"
 
 
 #########
 # types #
 #########
-class CustomBuild(build):
+class CustomBuild(_build_py):
     """
     custom handler for 'build' command
     """
+
     def run(self):
         """
         run build command
         """
-        #with zipfile.ZipFile('{}.zip'.format(_SRC_NAME), 'r') as src_zip:
-        #    src_zip.extractall()
-        #build_dir = '{}/build'.format(_SRC_NAME)
-        #os.makedirs(build_dir, exist_ok=True)
-        #subprocess.check_call('cmake ..', cwd=build_dir, shell=True)
-        #subprocess.check_call('make all resource', cwd=build_dir, shell=True)
-        shutil.rmtree('khaiii/lib', ignore_errors=True)
-        shutil.copytree('../lib', 'khaiii/lib')
-        shutil.rmtree('khaiii/share', ignore_errors=True)
-        shutil.copytree('../share', 'khaiii/share')
-        #shutil.rmtree(_SRC_NAME)
-        build.run(self)
+        self.announce(
+            "Running custom build command: Copying C++ build outputs into the Python package...",
+            level=3,
+        )
+
+        # Source and destination paths
+        src_lib_dir = os.path.abspath(os.path.join(_BUILD_DIR, "lib"))
+        dst_lib_dir = os.path.join("khaiii", "lib")
+        src_share_dir = os.path.abspath(os.path.join(_BUILD_DIR, "share"))
+        dst_share_dir = os.path.join("khaiii", "share")
+
+        # Lib dir
+        if os.path.exists(dst_lib_dir):
+            self.announce(f"Removing existing directory: {dst_lib_dir}", level=3)
+            shutil.rmtree(dst_lib_dir)
+        self.announce(f"Copying lib from {src_lib_dir} to {dst_lib_dir}", level=3)
+        shutil.copytree(src_lib_dir, dst_lib_dir)
+
+        # Share dir
+        if os.path.exists(dst_share_dir):
+            self.announce(f"Removing existing directory: {dst_share_dir}", level=3)
+            shutil.rmtree(dst_share_dir)
+        self.announce(f"Copying share from {src_share_dir} to {dst_share_dir}", level=3)
+        shutil.copytree(src_share_dir, dst_share_dir)
+
+        # Build standard command
+        _build_py.run(self)
 
 
 #############
@@ -65,31 +81,33 @@ def readme():
     Returns:
         long description (content of README.md)
     """
-    return open('@CMAKE_SOURCE_DIR@/README.md', 'r', encoding='UTF-8').read()
+    readme_path = os.path.join("@CMAKE_SOURCE_DIR@", "README.md")
+    with open(readme_path, "r", encoding="utf-8") as f:
+        return f.read()
 
 
 #########
 # setup #
 #########
 setup(
-    name='khaiii',
-    version='@KHAIII_VERSION@',
-    description='@CPACK_PACKAGE_DESCRIPTION_SUMMARY@',
+    name="khaiii",
+    version="@KHAIII_VERSION@",
+    description="@CPACK_PACKAGE_DESCRIPTION_SUMMARY@",
     long_description=readme(),
-    url='https://github.com/kakao/khaiii',
-    author='@CPACK_PACKAGE_VENDOR@',
-    author_email='jamie.lim@kakaocorp.com',
+    url="https://github.com/kakao/khaiii",
+    author="@CPACK_PACKAGE_VENDOR@",
+    author_email="jamie.lim@kakaocorp.com",
     classifiers=[
-        'Development Status :: 5 - Stable',
-        'License :: OSI Approved :: Apache 2.0',
-        'Programming Language :: Python :: 3',
+        "Development Status :: 5 - Stable",
+        "License :: OSI Approved :: Apache 2.0",
+        "Programming Language :: Python :: 3",
     ],
-    license='Apache 2.0',
-    packages=['khaiii', ],
+    license="Apache 2.0",
+    packages=["khaiii"],
     include_package_data=True,
     install_requires=[],
-    setup_requires=['pytest-runner', ],
-    tests_require=['pytest', ],
+    setup_requires=["pytest-runner"],
+    tests_require=["pytest"],
     zip_safe=False,
-    cmdclass={'build': CustomBuild}
+    cmdclass={"build_py": CustomBuild},
 )
