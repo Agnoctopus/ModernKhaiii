@@ -1,23 +1,58 @@
 khaiii
-====
-khaiii는 "Kakao Hangul Analyzer III"의 첫 글자들만 모아 만든 이름으로 카카오에서 개발한 세 번째 형태소분석기입니다. 두 번째 버전의 형태소분석기 이름인 dha2 (Daumkakao Hangul Analyzer 2)를 계승한 이름이기도 합니다.
+======
 
-형태소는 언어학에서 일정한 의미가 있는 가장 작은 말의 단위로 발화체 내에서 따로 떼어낼 수 있는 것을 말합니다. 즉, 더 분석하면 뜻이 없어지는 말의 단위입니다. 형태소분석기는 단어를 보고 형태소 단위로 분리해내는 소프트웨어를 말합니다. 이러한 형태소분석은 자연어 처리의 가장 기초적인 절차로 이후 구문 분석이나 의미 분석으로 나아가기 위해 가장 먼저 이루어져야 하는 과정으로 볼 수 있습니다. (한국어 위키피디아에서 인용)
+khaiii is an abbreviation for "Kakao Hangul Analyzer III" and is the third morphological analyzer developed by Kakao. It inherits the naming convention from the second version of the morphological analyzer, dha2 (Daumkakao Hangul Analyzer 2).
+
+In linguistics, a morpheme is the smallest unit of language that carries meaning and can be separated within speech. In other words, if further broken down, it loses its meaning. A morphological analyzer is software that segments words into their constituent morphemes. This process is a fundamental step in natural language processing (NLP) and serves as the foundation for subsequent processes such as syntax and semantic analysis. (Cited from Korean Wikipedia)
+
+Build
+-----
+
+To build the project localy:
+
+```shell
+# Set CWD to build directory
+mkdir build
+cd build
+
+# Install required dependencies with conan
+conan profile detect
+conan install .. --output-folder=. --build=missing 
+
+# Prepare to build
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Ninja"
+
+# Build
+RUN cmake --build .
+RUN cmake --build . --target large_resource
+RUN cmake --build . --target package_python
+
+# Install python package
+cd package_python
+pip3 install .
+```
+
+To build the project inside Docker:
+
+```shell
+docker build  -t khaiii docker
+docker run --rm -it khaiii
+```
 
 
-데이터 기반
-----
-기존 버전이 사전과 규칙에 기반해 분석을 하는 데 반해 khaiii는 데이터(혹은 기계학습) 기반의 알고리즘을 이용하여 분석을 합니다. 학습에 사용한 코퍼스는 국립국어원에서 배포한 [21세기 세종계획 최종 성과물](https://ithub.korean.go.kr/user/noticeView.do?boardSeq=1&articleSeq=16)을 저희 카카오에서 오류를 수정하고 내용을 일부 추가하기도 한 것입니다.
+Data-driven Approach
+--------------------
 
-전처리 과정에서 오류가 발생하는 문장을 제외하고 약 85만 문장, 천만 어절의 코퍼스를 사용하여 학습을 했습니다. 코퍼스와 품사 체계에 대한 자세한 내용은 [코퍼스](https://github.com/kakao/khaiii/wiki/%EC%BD%94%ED%8D%BC%EC%8A%A4) 문서를 참고하시기 바랍니다.
+Unlike previous versions, which relied on dictionaries and rule-based methods for analysis, khaiii utilizes data-driven (or machine learning-based) algorithms. The corpus used for training is the ["21st Century Sejong Project Final Outcome"](https://ithub.korean.go.kr/user/noticeView.do?boardSeq=1&articleSeq=16), distributed by the National Institute of the Korean Language. Kakao has corrected errors and made some additions to this dataset.
 
+After filtering out sentences with errors in the preprocessing stage, we used a corpus consisting of approximately 850,000 sentences and 10 million word segments for training. For more details on the corpus and part-of-speech (POS) tagging system, please refer to the [corpus documentation](https://github.com/kakao/khaiii/wiki/%EC%BD%94%ED%8D%BC%EC%8A%A4).
 
-알고리즘
-----
-기계학습에 사용한 알고리즘은 신경망 알고리즘들 중에서 Convolutional Neural Network(CNN)을 사용하였습니다. 한국어에서 형태소분석은 자연어처리를 위한 가장 기본적인 전처리 과정이므로 속도가 매우 중요한 요소라고 생각합니다. 따라서 자연어처리에 많이 사용하는 Long-Short Term Memory(LSTM)와 같은 Recurrent Neural Network(RNN) 알고리즘은 속도 면에서 활용도가 떨어질 것으로 예상하여 고려 대상에서 제외하였습니다.
+Algorithm
+---------
 
-CNN 모델에 대한 상세한 내용은 [CNN 모델](https://github.com/kakao/khaiii/wiki/CNN-%EB%AA%A8%EB%8D%B8) 문서를 참고하시기 바랍니다.
+For machine learning, khaiii employs a Convolutional Neural Network (CNN), one of the neural network algorithms. Since morphological analysis is a fundamental preprocessing step in NLP, speed is a critical factor. Given this, we excluded Recurrent Neural Network (RNN) algorithms such as Long Short-Term Memory (LSTM), which are commonly used in NLP but are less efficient in terms of processing speed.
 
+For a detailed explanation of the CNN model, please refer to the [CNN Model documentation](https://github.com/kakao/khaiii/wiki/CNN-%EB%AA%A8%EB%8D%B8).
 
 성능
 ----
@@ -107,30 +142,3 @@ WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 License for the specific language governing permissions and limitations under
 the License.
 
-### Build
-
-Local:
-
-```shell
-mkdir build
-cd build
-
-conan profile detect
-conan install .. --output-folder=. --build=missing 
-
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Ninja"
-
-RUN cmake --build .
-RUN cmake --build . --target large_resource
-RUN cmake --build . --target package_python
-
-cd package_python
-pip3 install .
-```
-
-Docker:
-
-```shell
-docker build  -t khaiii docker
-docker run --rm -it khaiii
-```
