@@ -66,6 +66,11 @@
 #      make my_coverage_target
 #
 
+# 코드 커버리지 옵션을 켭니다.
+# lcov --capture --directory . --output-file coverage.info
+# genhtml coverage.info --output-directory coverage.html
+# python -m lcov_cobertura --excludes build.CMakeFiles --excludes ".*.usr.include.*" --excludes ".*..hunter._Base.*" coverage.info
+
 include(CMakeParseArguments)
 
 # Check prereqs

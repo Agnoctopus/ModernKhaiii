@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.23)
 # Conan setup
 include(${CMAKE_BINARY_DIR}/conan_toolchain.cmake)
 
-# versions
+# Project versions
 file(READ "include/khaiii/khaiii_api.h" KHAIII_VERSION_HEADER)
 string(REGEX MATCH "#define[ \t]+KHAIII_VERSION_MAJOR[ \t]+([0-9]+)" _KHAIII_VERSION_MAJOR "${KHAIII_VERSION_HEADER}")
 set(KHAIII_VERSION_MAJOR ${CMAKE_MATCH_1} CACHE STRING "major version" FORCE)
@@ -11,30 +11,29 @@ string(REGEX MATCH "#define[ \t]+KHAIII_VERSION_MINOR[ \t]+([0-9]+)" _KHAIII_VER
 set(KHAIII_VERSION_MINOR ${CMAKE_MATCH_1} CACHE STRING "minor version" FORCE)
 set(KHAIII_VERSION ${KHAIII_VERSION_MAJOR}.${KHAIII_VERSION_MINOR} CACHE STRING "version" FORCE)
 
-# project
-project(khaiii VERSION ${KHAIII_VERSION})
+# Project definition
+project(khaiii VERSION ${KHAIII_VERSION} LANGUAGES CXX)
 
-# options
-option(FMA "on/off fused multiply add compiler option" ON)
+# Project options
+
+# Fused multiply add
+option(FMA "Fused Multiply Add" ON)
 if(FMA)
+    message(STATUS "[khaiii] fused multiplty add option enabled")
     include("cmake/FusedMultiplyAdd.cmake")
 endif()
-option(PROFILER "on/off profiler option" OFF)
+
+# Profile
+option(PROFILER "Profiler" OFF)
 if(PROFILER)
-    # bin/khaiii는 /tmp/bin_khaiii.prof 파일로, test/khaiii는 /tmp/test_khaiii.prof 파일로 생성됩니다.
-    # 출력 파일명을 지정하고 싶을 경우 CPUPROFILE=/path/to/output bin/khanii와 같이 환경변수와 함께 실행합니다.
-    # pprof --text bin/khaiii /tmp/bin_khaiii.prof와 같이 실행하면 출력 파일로부터 텍스트 보고서를 생성할 수 있습니다.
-    # 참고: https://github.com/gperftools/gperftools
     message(STATUS "[khaiii] profiler option enabled")
     include("cmake/FindGperftools.cmake")
     add_definitions(-DPROFILER)
 endif()
-option(COVERAGE "on/off code coverage option" OFF)
+
+# Code coverage
+option(COVERAGE "Code coverage" OFF)
 if(COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
-    # 코드 커버리지 옵션을 켭니다.
-    # lcov --capture --directory . --output-file coverage.info
-    # genhtml coverage.info --output-directory coverage.html
-    # python -m lcov_cobertura --excludes build.CMakeFiles --excludes ".*.usr.include.*" --excludes ".*..hunter._Base.*" coverage.info
     message(STATUS "[khaiii] coverage option enabled")
     set(CMAKE_BUILD_TYPE Debug)
     include(cmake/CodeCoverage.cmake)
@@ -43,37 +42,40 @@ endif()
 
 set(CMAKE_DEBUG_POSTFIX "_debug")
 
-# dependent 3rd party libraries
-
-
-#hunter_add_package(Boost)
+# Extern dependencies
 find_package(Boost CONFIG REQUIRED)
-#hunter_add_package(cxxopts)
 find_package(cxxopts CONFIG REQUIRED)
-#hunter_add_package(Eigen)
 find_package(Eigen3 CONFIG REQUIRED)
-#hunter_add_package(fmt)
 find_package(fmt CONFIG REQUIRED)
-#hunter_add_package(GTest)
 find_package(GTest CONFIG REQUIRED)
-#hunter_add_package(nlohmann_json)
 find_package(nlohmann_json CONFIG REQUIRED)
-#hunter_add_package(spdlog)
 find_package(spdlog CONFIG REQUIRED)
-
 find_package(Threads REQUIRED)
 
+# Language requirements
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_definitions(-DFMT_HEADER_ONLY)
+
+# Release profile
 if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-O3)
     add_definitions(-g)
     add_definitions(-funroll-loops)
 endif()
 
-# main objects
+# Includes interface
+add_library(khaiii_includes INTERFACE)
+target_include_directories(khaiii_includes INTERFACE
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src/main/cpp
+    ${Boost_INCLUDE_DIRS}
+    ${Eigen3_INCLUDE_DIRS}
+    ${nlohmann_json_INCLUDE_DIRS}
+)
+
+# Project main objects
 add_library(obj_khaiii OBJECT
         src/main/cpp/khaiii/Config.cpp
         src/main/cpp/khaiii/Embed.cpp
@@ -92,36 +94,31 @@ add_library(obj_khaiii OBJECT
         src/main/cpp/khaiii/nn/Conv1d.cpp
         src/main/cpp/khaiii/nn/Linear.cpp
         src/main/cpp/khaiii/nn/tensor.cpp)
-set(include_directories
-        include
-        src/main/cpp
-        ${Boost_INCLUDE_DIRS}
-        ${Eigen3_INCLUDE_DIRS}
-        ${nlohmann_json_INCLUDE_DIRS})
-target_include_directories(obj_khaiii PUBLIC ${include_directories})
+target_include_directories(obj_khaiii PUBLIC $<TARGET_PROPERTY:khaiii_includes,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(obj_khaiii PUBLIC -DPREFIX="${CMAKE_INSTALL_PREFIX}")
 
-# library: libkhaiii.so
+# Library: libkhaiii.so
 add_library(khaiii SHARED $<TARGET_OBJECTS:obj_khaiii>)
 set_target_properties(khaiii PROPERTIES
         VERSION ${KHAIII_VERSION}
         SOVERSION ${KHAIII_VERSION_MAJOR}
         LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+target_link_libraries(khaiii PRIVATE khaiii_includes)
 
-# executable: bin/khaiii
+# Executable: bin/khaiii
 add_executable(bin_khaiii
         $<TARGET_OBJECTS:obj_khaiii>
         src/main/cpp/main.cpp)
 set_target_properties(bin_khaiii PROPERTIES
         OUTPUT_NAME khaiii
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-target_include_directories(bin_khaiii PRIVATE ${include_directories})
 target_link_libraries(bin_khaiii PRIVATE
         cxxopts::cxxopts
         ${GPERFTOOLS_PROFILER}
-        ${CMAKE_THREAD_LIBS_INIT})
+        ${CMAKE_THREAD_LIBS_INIT}
+        khaiii_includes)
 
-# executable: test_khaiii
+# Test executable: test_khaiii
 add_executable(test_khaiii
         $<TARGET_OBJECTS:obj_khaiii>
         src/test/cpp/test_main.cpp
@@ -133,34 +130,36 @@ set_target_properties(test_khaiii PROPERTIES
         OUTPUT_NAME khaiii
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/test)
 target_include_directories(test_khaiii PRIVATE
-        src/test/cpp
-        ${include_directories})
+        src/test/cpp)
 target_link_libraries(test_khaiii PRIVATE
         GTest::gtest
         cxxopts::cxxopts
         ${GPERFTOOLS_PROFILER}
-        ${CMAKE_THREAD_LIBS_INIT})
+        ${CMAKE_THREAD_LIBS_INIT}
+        khaiii_includes)
 if(COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(test_khaiii PRIVATE gcov)
 endif()
 
-# resource
+# Target resource
 add_custom_target(resource
         COMMAND make PREFIX=${CMAKE_BINARY_DIR} -C ${CMAKE_SOURCE_DIR}/rsc)
 add_custom_target(large_resource
         COMMAND make PREFIX=${CMAKE_BINARY_DIR} MODEL_SIZE=large -C ${CMAKE_SOURCE_DIR}/rsc)
 
-# test
+# Target test
 enable_testing()
 add_test(NAME test_khaiii COMMAND $<TARGET_FILE:test_khaiii> "--rsc-dir=${CMAKE_BINARY_DIR}/share/khaiii")
 
-# install
-install_targets(/lib khaiii)
-install_targets(/bin bin_khaiii)
-install_files(/include FILES ${CMAKE_SOURCE_DIR}/include/khaiii)
-install_files(/share FILES ${CMAKE_BINARY_DIR}/share/khaiii)
+# Target install
+install(TARGETS khaiii bin_khaiii
+    RUNTIME DESTINATION bin
+    LIBRARY DESTINATION lib
+    ARCHIVE DESTINATION lib)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/include/khaiii DESTINATION include)
+install(DIRECTORY ${CMAKE_BINARY_DIR}/share/khaiii DESTINATION share/khaiii)
 
-# package
+# Project package
 set(CPACK_GENERATOR TGZ)
 set(CPACK_PACKAGE_VENDOR "Kakao Corp.")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Kakao Hangul Analyzer III")
@@ -177,7 +176,7 @@ set(CPACK_SOURCE_IGNORE_FILES
         ${CPACK_SOURCE_IGNORE_FILES})
 include(CPack)
 
-# package python
+# Python package
 set(PKG_PY_DIR ${CMAKE_BINARY_DIR}/package_python)
 add_custom_target(package_python
         COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_SOURCE_DIR}/README.md ${PKG_PY_DIR}/README.md
@@ -190,8 +189,3 @@ add_custom_target(package_python
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/setup.py.in ${PKG_PY_DIR}/setup.py @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/MANIFEST.in.in ${PKG_PY_DIR}/MANIFEST.in @ONLY)
 configure_file(${CMAKE_SOURCE_DIR}/src/main/python/khaiii/__init__.py.in ${PKG_PY_DIR}/khaiii/__init__.py @ONLY)
-
-
-message(STATUS "CMAKE_PREFIX_PATH: ${CMAKE_PREFIX_PATH}")
-message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
-message(STATUS "nlohmann_json include dir: ${Eigen3_INCLUDE_DIRS}")
