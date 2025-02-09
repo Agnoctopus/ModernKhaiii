@@ -73,6 +73,7 @@ target_include_directories(khaiii_includes INTERFACE
     ${Boost_INCLUDE_DIRS}
     ${Eigen3_INCLUDE_DIRS}
     ${nlohmann_json_INCLUDE_DIRS}
+    ${spdlog_INCLUDE_DIRS}
 )
 
 # Project main objects
