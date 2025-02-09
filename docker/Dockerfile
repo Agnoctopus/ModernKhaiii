@@ -61,5 +61,6 @@ RUN sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 # Copy worker build directory
 COPY --from=builder /opt/khaiii/ /opt/khaiii/
 
-# Install package
-RUN pip install /opt/khaiii/build/package_python
+# Upgrade pip and install package
+RUN pip install --root-user-action=ignore --upgrade pip
+RUN pip install --root-user-action=ignore /opt/khaiii/build/package_python
