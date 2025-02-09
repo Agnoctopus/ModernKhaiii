@@ -17,7 +17,7 @@ RUN apt-get update && \
 # Clone the Khaiii repository from GitHub
 RUN git clone https://github.com/Agnoctopus/ModernKhaiii.git /opt/khaiii
 
-# Set curent working directory to khaiii
+# Set working directory
 WORKDIR /opt/khaiii
 
 # Setup virtualenv
@@ -49,7 +49,7 @@ RUN cmake --build . --target package_python
 FROM python:3.12-slim
 MAINTAINER Agno
 
-# Install en_US.UTF-8 locale
+# Update and install en_US.UTF-8 locale
 RUN apt-get update && \
         apt-get install -y \
             locales \
