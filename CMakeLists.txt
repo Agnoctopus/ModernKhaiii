@@ -57,13 +57,18 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 add_definitions(-DFMT_HEADER_ONLY)
+add_definitions(-DSPDLOG_FMT_EXTERNAL)
 
-# Release profile
-if(NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_definitions(-O3)
-    add_definitions(-g)
-    add_definitions(-funroll-loops)
-endif()
+
+
+# Build profiles
+add_library(khaiii_compile_options INTERFACE)
+target_compile_options(khaiii_compile_options INTERFACE 
+  $<$<CONFIG:Debug>:-O0 -g -Wall -Wextra -pedantic>
+  $<$<CONFIG:Release>:-O3 -DNDEBUG -march=native>
+  $<$<CONFIG:RelWithDebInfo>:-O2 -g -Wall>
+  $<$<CONFIG:MinSizeRel>:-Os -DNDEBUG>
+)
 
 # Includes interface
 add_library(khaiii_includes INTERFACE)
@@ -74,6 +79,7 @@ target_include_directories(khaiii_includes INTERFACE
     ${Eigen3_INCLUDE_DIRS}
     ${nlohmann_json_INCLUDE_DIRS}
     ${spdlog_INCLUDE_DIRS}
+    ${fmt_INCLUDE_DIRS}
 )
 
 # Project main objects
@@ -97,6 +103,7 @@ add_library(obj_khaiii OBJECT
         src/main/cpp/khaiii/nn/tensor.cpp)
 target_include_directories(obj_khaiii PUBLIC $<TARGET_PROPERTY:khaiii_includes,INTERFACE_INCLUDE_DIRECTORIES>)
 target_compile_definitions(obj_khaiii PUBLIC -DPREFIX="${CMAKE_INSTALL_PREFIX}")
+target_link_libraries(obj_khaiii PRIVATE khaiii_compile_options)
 
 # Library: libkhaiii.so
 add_library(khaiii SHARED $<TARGET_OBJECTS:obj_khaiii>)
@@ -117,7 +124,8 @@ target_link_libraries(bin_khaiii PRIVATE
         cxxopts::cxxopts
         ${GPERFTOOLS_PROFILER}
         ${CMAKE_THREAD_LIBS_INIT}
-        khaiii_includes)
+        khaiii_includes
+        khaiii_compile_options)
 
 # Test executable: test_khaiii
 add_executable(test_khaiii
@@ -137,7 +145,8 @@ target_link_libraries(test_khaiii PRIVATE
         cxxopts::cxxopts
         ${GPERFTOOLS_PROFILER}
         ${CMAKE_THREAD_LIBS_INIT}
-        khaiii_includes)
+        khaiii_includes
+        khaiii_compile_options)
 if(COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(test_khaiii PRIVATE gcov)
 endif()
