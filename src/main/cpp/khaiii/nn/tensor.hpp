@@ -32,9 +32,8 @@ using vector_t = Eigen::VectorXf;
 //////////////////////////
 // activation functions //
 //////////////////////////
-typedef std::pointer_to_unary_function<float, float> activation_t;
+using activation_t = std::function<float(float)>;
 extern activation_t RELU;
-
 
 ///////////////
 // functions //

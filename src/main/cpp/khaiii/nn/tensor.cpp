@@ -25,11 +25,7 @@ using std::vector;
 //////////////////////////
 // activation functions //
 //////////////////////////
-float relu(float x) {
-    return std::max(x, 0.0f);
-}
-activation_t RELU = std::ptr_fun(relu);    ///< ReLU function pointer
-
+activation_t RELU = [](float x) { return std::max(0.0f, x); };    ///< ReLU function pointer
 
 ///////////////
 // functions //
