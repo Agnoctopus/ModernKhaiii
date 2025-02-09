@@ -109,6 +109,8 @@ the License.
 
 ### Build
 
+Local:
+
 ```shell
 mkdir build
 cd build
@@ -116,10 +118,19 @@ cd build
 conan profile detect
 conan install .. --output-folder=. --build=missing 
 
-cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Unix Makefiles"
-cmake --build . -j$nproc
-make large_resource
-make package_python
+cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Ninja"
+
+RUN cmake --build .
+RUN cmake --build . --target large_resource
+RUN cmake --build . --target package_python
+
 cd package_python
 pip3 install .
+```
+
+Docker:
+
+```shell
+docker build  -t khaiii docker
+docker run --rm -it khaiii
 ```
