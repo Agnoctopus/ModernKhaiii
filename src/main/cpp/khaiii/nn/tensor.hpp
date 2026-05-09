@@ -11,6 +11,7 @@
 //////////////
 // includes //
 //////////////
+#include <cassert>
 #include <functional>
 
 #include "Eigen/Dense"

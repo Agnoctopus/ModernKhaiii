@@ -23,9 +23,9 @@ conan install .. --output-folder=. --build=missing
 cmake .. -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake -DCMAKE_BUILD_TYPE=Release -G"Ninja"
 
 # Build
-RUN cmake --build .
-RUN cmake --build . --target large_resource
-RUN cmake --build . --target package_python
+cmake --build .
+cmake --build . --target large_resource
+cmake --build . --target package_python
 
 # Install python package
 cd package_python
